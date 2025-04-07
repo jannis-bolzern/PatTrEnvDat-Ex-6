@@ -24,7 +24,7 @@ wildschwein_BE <- read_delim("wildschwein_BE_2056.csv", ",") |>
 ```
 
 
-## Task 1: Import and visualize spatial data -
+## Task 1: Import and visualize spatial data
 
 
 Import the vector dataset
@@ -166,7 +166,7 @@ head(hourly_crop_dist)
 ## Task 3: Explore Annotated Trajectories 
 
 
-Filter to only the three main animals and top crops
+Filter to the three animals and top crops
 
 ```{r}
 wildschwein_individuals <- wildschwein_annotated |>
@@ -211,12 +211,13 @@ ggplot(wildschwein_individuals |> filter(Frucht %in% top_crops_per_animal),
   theme(legend.position = "bottom")
 ```
 
-Create individual maps for each animal
-Visualization with top 20 crops and individual animals
+Visualization with crops and individual animals
 
 ```{r}
 #| message: false
 #| warning: false
+#| fig-height: 10
+#| fig-width: 6
 tm_shape(fanel) +
   tm_polygons("Frucht", palette = "Set3", title = "Crop Type") +
   tm_shape(wildschwein_individuals) +
