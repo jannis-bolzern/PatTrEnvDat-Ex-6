@@ -83,3 +83,4 @@ hourly_crop_dist <- wildschwein_annotated |>
 
 # View results
 head(hourly_crop_dist)
+
