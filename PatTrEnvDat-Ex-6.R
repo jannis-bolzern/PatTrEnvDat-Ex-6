@@ -84,3 +84,74 @@ hourly_crop_dist <- wildschwein_annotated |>
 # View results
 head(hourly_crop_dist)
 
+##Task 3: Explore Annotated Trajectories
+
+# Filter to only the three main animals and top crops
+wildschwein_individuals <- wildschwein_annotated |>
+  filter(TierName %in% c("Sabi", "Ruth", "Rosa")) |>
+  filter(!is.na(Frucht)) |>  # Remove points without crop info
+  mutate(
+    Hour = as.numeric(format(DatetimeUTC, "%H")),
+    Month = format(DatetimeUTC, "%B"),
+    Month = factor(Month, levels = c("May", "June")),
+    TierName = factor(TierName, levels = c("Sabi", "Ruth", "Rosa"))
+  )
+
+# Get top 5 crops for each animal
+top_crops_per_animal <- wildschwein_individuals |>
+  st_drop_geometry() |>
+  group_by(TierName, Frucht) |>
+  summarise(n = n()) |>
+  group_by(TierName) |>
+  top_n(5, n) |>
+  pull(Frucht) |>
+  unique()
+
+# Plot activity patterns by hour for each animal
+ggplot(wildschwein_individuals |> filter(Frucht %in% top_crops_per_animal), 
+       aes(x = Hour, fill = Frucht)) +
+  geom_histogram(binwidth = 1, position = "stack") +
+  facet_wrap(~TierName, ncol = 1, scales = "free_y") +
+  labs(title = "Hourly Activity Patterns by Animal and Crop Type",
+       x = "Hour of Day",
+       y = "Number of Observations",
+       fill = "Crop Type") +
+  scale_x_continuous(breaks = seq(0, 23, by = 3)) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+library(tmap)
+
+# Create individual maps for each animal
+tm_shape(fanel) +
+  tm_polygons("Frucht", palette = "Set3", title = "Crop Type") +
+  tm_shape(wildschwein_individuals) +
+  tm_dots(size = 0.1, col = "TierName", 
+          palette = c(Sabi = "red", Ruth = "blue", Rosa = "green")) +
+  tm_facets(by = "TierName", ncol = 1) +
+  tm_layout(legend.outside = TRUE)
+
+# Create bar plot of crop preferences by animal
+ggplot(wildschwein_individuals |> filter(Frucht %in% top_crops_per_animal), 
+       aes(x = Frucht, fill = TierName)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Crop Preferences by Individual Wild Boar",
+       x = "Crop Type",
+       y = "Number of Observations") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set2", name = "Animal") +
+  facet_wrap(~Month, ncol = 1)
+
+# Create circular plots for each animal
+ggplot(wildschwein_individuals |> filter(Frucht %in% top_crops_per_animal), 
+       aes(x = Hour, fill = Frucht)) +
+  geom_histogram(binwidth = 1, alpha = 0.8) +
+  coord_polar() +
+  scale_x_continuous(limits = c(0, 24), breaks = seq(0, 24, by = 6)) +
+  labs(title = "Daily Activity Patterns by Individual",
+       x = "Hour of Day",
+       y = "Count") +
+  facet_grid(Frucht~TierName) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
