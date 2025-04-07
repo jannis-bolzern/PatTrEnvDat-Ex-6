@@ -185,3 +185,74 @@ tm_shape(vegetation_height) +
     legend.outside = TRUE,
     legend.outside.position = "right"
   )
+
+##Task 5: Annotate Trajectories with Vegetation Height
+
+# Check CRS of both datasets
+st_crs(wildschwein_BE)  # Check wild boar CRS
+crs(vegetation_height)  # Check vegetation raster CRS
+
+# Not matching, transforming the points:
+wildschwein_BE <- st_transform(wildschwein_BE, crs(vegetation_height))
+
+# Convert sf points to terra's vect format
+wildschwein_vect <- vect(wildschwein_BE)
+
+# Extract values using terra's extract
+vegetation_annotations <- terra::extract(
+  x = vegetation_height,       # SpatRaster object
+  y = wildschwein_vect,        # SpatVector points
+  method = "bilinear",         # Interpolation method
+  ID = FALSE                   # Don't include feature IDs
+)
+
+# Rename the extracted column
+names(vegetation_annotations) <- "vegetation_height"
+
+# Combine with original data
+wildschwein_veg <- cbind(
+  st_drop_geometry(wildschwein_BE),  # Keep all original columns
+  vegetation_height = vegetation_annotations$vegetation_height,
+  geometry = st_geometry(wildschwein_BE)  # Add geometry back
+) |> 
+  st_as_sf()
+
+# Check results
+head(wildschwein_veg)
+
+# Count NA values (points outside raster coverage)
+sum(is.na(wildschwein_veg$vegetation_height))
+
+# Remove points with NA vegetation values
+wildschwein_veg <- wildschwein_veg |> 
+  filter(!is.na(vegetation_height))
+
+# Visualize Distribution
+ggplot(wildschwein_veg, aes(x = vegetation_height)) +
+  geom_histogram(bins = 30, fill = "darkgreen") +
+  labs(title = "Distribution of Vegetation Height at Wild Boar Locations",
+       x = "Vegetation Height (m)",
+       y = "Count")
+
+# Add hour column
+wildschwein_veg <- wildschwein_veg |>
+  mutate(Hour = as.numeric(format(DatetimeUTC, "%H")))
+
+# Plot
+ggplot(wildschwein_veg, aes(x = Hour, y = vegetation_height)) +
+  geom_point(alpha = 0.1, color = "darkgreen") +
+  geom_smooth(method = "loess", color = "red", se = FALSE) +  # se=FALSE disables CI
+  labs(title = "Vegetation Height Usage by Hour",
+       y = "Vegetation Height (m)") +
+  scale_x_continuous(breaks = 0:23)
+
+# Filter to our three animals
+wildschwein_veg_filtered <- wildschwein_veg |>
+  filter(TierName %in% c("Sabi", "Ruth", "Rosa"))
+
+# Violin plot comparison
+ggplot(wildschwein_veg_filtered, aes(x = TierName, y = vegetation_height)) +
+  geom_violin(fill = "lightgreen") +
+  geom_boxplot(width = 0.1, fill = "white") +
+  labs(title = "Vegetation Height Preferences by Animal",
+       y = "Vegetation Height (m)")
