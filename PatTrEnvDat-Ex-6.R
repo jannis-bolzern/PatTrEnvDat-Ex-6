@@ -1,5 +1,7 @@
 library("tidyverse")
 library("sf")
+library("tmap")
+library("terra")
 
 # Import wild boar data and convert to sf object
 wildschwein_BE <- read_delim("wildschwein_BE_2056.csv", ",") |>
@@ -120,9 +122,8 @@ ggplot(wildschwein_individuals |> filter(Frucht %in% top_crops_per_animal),
   theme_minimal() +
   theme(legend.position = "bottom")
 
-library(tmap)
-
 # Create individual maps for each animal
+# Visualization with top 20 crops and individual animals
 tm_shape(fanel) +
   tm_polygons("Frucht", palette = "Set3", title = "Crop Type") +
   tm_shape(wildschwein_individuals) +
@@ -155,3 +156,32 @@ ggplot(wildschwein_individuals |> filter(Frucht %in% top_crops_per_animal),
   theme_minimal() +
   theme(legend.position = "none")
 
+##Task 4: Import and Visualize Vegetation Height
+
+# Import the vegetation height raster
+vegetation_height <- rast("vegetationshoehe_LFI.tif")
+
+# Check basic raster properties
+print(vegetation_height)
+st_crs(vegetation_height)
+res(vegetation_height)
+minmax(vegetation_height)
+
+# Basic plot with color gradient
+plot(vegetation_height, 
+     main = "Vegetation Height (m)",
+     axes = TRUE)
+
+tm_shape(vegetation_height) +
+  tm_raster(title = "Vegetation Height (m)",
+            palette = "YlGn",
+            alpha = 0.7) +
+  tm_shape(wildschwein_BE) +
+  tm_dots(size = 0.05, col = "red", alpha = 0.3) +
+  tm_layout(
+    main.title = "Wild Boar Locations vs. Vegetation Height",
+    main.title.position = "center",
+    main.title.size = 1.1,
+    legend.outside = TRUE,
+    legend.outside.position = "right"
+  )
