@@ -7,7 +7,9 @@ library("terra")
 wildschwein_BE <- read_delim("wildschwein_BE_2056.csv", ",") |>
   st_as_sf(coords = c("E", "N"), crs = 2056, remove = FALSE)
 
-##Task 1: Import and visualize spatial data
+
+# Task 1: Import and visualize spatial data -------------------------------
+
 
 # Import the vector dataset
 fanel <- read_sf("Feldaufnahmen_Fanel.gpkg")
@@ -28,7 +30,9 @@ sapply(st_drop_geometry(fanel), class)
 # Check coordinate reference system
 st_crs(fanel)
 
-##Task 2: Annotate Trajectories from Vector Data
+
+# Task 2: Annotate Trajectories from Vector Data --------------------------
+
 
 # Convert DatetimeUTC to proper datetime format
 wildschwein_BE$DatetimeUTC <- as.POSIXct(wildschwein_BE$DatetimeUTC, tz = "UTC")
@@ -86,7 +90,9 @@ hourly_crop_dist <- wildschwein_annotated |>
 # View results
 head(hourly_crop_dist)
 
-##Task 3: Explore Annotated Trajectories
+
+# Task 3: Explore Annotated Trajectories ----------------------------------
+
 
 # Filter to only the three main animals and top crops
 wildschwein_individuals <- wildschwein_annotated |>
@@ -156,7 +162,8 @@ ggplot(wildschwein_individuals |> filter(Frucht %in% top_crops_per_animal),
   theme_minimal() +
   theme(legend.position = "none")
 
-##Task 4: Import and Visualize Vegetation Height
+
+# Task 4: Import and Visualize Vegetation Height --------------------------
 
 # Import the vegetation height raster
 vegetation_height <- rast("vegetationshoehe_LFI.tif")
@@ -186,7 +193,9 @@ tm_shape(vegetation_height) +
     legend.outside.position = "right"
   )
 
-##Task 5: Annotate Trajectories with Vegetation Height
+
+# Task 5: Annotate Trajectories with Vegetation Height --------------------
+
 
 # Check CRS of both datasets
 st_crs(wildschwein_BE)  # Check wild boar CRS
